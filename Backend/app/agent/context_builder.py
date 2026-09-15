@@ -35,17 +35,17 @@ def build_dashboard_context(
     question: str,
     dashboard_data: dict[str, Any] | None,
     history: list | None = None
-) -> tuple[str, str, list[str]]:
+) -> tuple[str, str, list[str], str | None, str | None]:
     """
     Build a compact dashboard context string for the agent.
 
     Returns:
-        tuple: (context_string, source_mode, capabilities)
+        tuple: (context_string, source_mode, capabilities, operation, metric)
     """
-    source_mode, capabilities = determine_source_and_capabilities(question, dashboard_data, history)
+    source_mode, capabilities, explicit_mcp, operation, metric = determine_source_and_capabilities(question, dashboard_data, history)
 
     if not dashboard_data:
-        return "No dashboard data available.", source_mode, capabilities
+        return "No dashboard data available.", source_mode, capabilities, operation, metric
 
     # Build filtered context by strictly extracting required fields
     # If source_mode is dashboard or hybrid, we provide everything currently
@@ -85,13 +85,23 @@ def build_dashboard_context(
                 filtered[key] = val
 
     if not filtered:
-        return "No relevant dashboard data found.", source_mode, capabilities
+        return "No relevant dashboard data found.", source_mode, capabilities, operation, metric
+
+    if explicit_mcp:
+        # User explicitly demanded MCP — do NOT inject dashboard data that could confuse the LLM.
+        # Return only the _INSTRUCTION warning so prompt_builder skips injection (it's < 300 chars).
+        _instruction = (
+            "The user explicitly requested GitHub/MCP. "
+            "Do NOT use dashboard data as a factual source for this request. "
+            "You MUST execute an MCP tool to satisfy factual claims."
+        )
+        return _instruction, source_mode, capabilities, operation, metric
 
     try:
-        return json.dumps(filtered, default=str, indent=None), source_mode, capabilities
+        return json.dumps(filtered, default=str, indent=None), source_mode, capabilities, operation, metric
     except Exception as e:
         logger.error("Context builder serialization error: %s", e)
-        return "Dashboard data unavailable.", source_mode, capabilities
+        return "Dashboard data unavailable.", source_mode, capabilities, operation, metric
 
 
 def build_compact_profile_summary(dashboard_data: dict[str, Any] | None) -> str:

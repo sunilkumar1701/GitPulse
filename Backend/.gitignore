@@ -5,8 +5,8 @@ env/
 
 # Environment variables - NEVER commit these
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # Python bytecode cache
 __pycache__/
@@ -24,6 +24,9 @@ build/
 .pytest_cache/
 htmlcov/
 .coverage
+tests/
+test_*.py
+*_test.py
 
 # IDE
 .vscode/

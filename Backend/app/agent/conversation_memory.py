@@ -45,9 +45,12 @@ def build_memory_messages(
         recent = history[-MAX_RECENT_MESSAGES:]
         for turn in recent:
             role = turn.role if turn.role in ("user", "assistant") else "user"
+            content = turn.content or ""
+            if len(content) > 1500:
+                content = content[:500] + f"\n... [Content truncated from {len(content)} chars to preserve context]"
             messages.append({
                 "role": role,
-                "content": turn.content,
+                "content": content,
             })
 
     return messages

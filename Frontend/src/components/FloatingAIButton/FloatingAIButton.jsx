@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import chatbotIcon from '../../assets/Chatbot.png';
 import ChatPanel from '../chat/ChatPanel';
 import './FloatingAIButton.css';
@@ -6,14 +6,15 @@ import './FloatingAIButton.css';
 const FloatingAIButton = ({ username }) => {
   const [showChatbot, setShowChatbot] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 20 }); // Bottom right offset
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // purely for CSS
   
   const dragStartRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false); // synchronous tracking
   const buttonRef = useRef(null);
 
   const toggleChatbot = (e) => {
     // Only toggle if we didn't just finish dragging
-    if (!isDragging) {
+    if (!isDraggingRef.current) {
       setShowChatbot((prev) => !prev);
     }
   };
@@ -21,12 +22,9 @@ const FloatingAIButton = ({ username }) => {
   const handlePointerDown = (e) => {
     // Left mouse button or touch
     if (e.button !== 0 && e.type !== 'touchstart') return;
-    
-    e.preventDefault();
-    e.stopPropagation();
 
-    // Prevent dragging from starting immediately to allow clicks
-    const timer = setTimeout(() => setIsDragging(true), 150);
+    isDraggingRef.current = false;
+    setIsDragging(false);
 
     const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -34,7 +32,6 @@ const FloatingAIButton = ({ username }) => {
     dragStartRef.current = {
       x: clientX,
       y: clientY,
-      timer
     };
 
     document.addEventListener('pointermove', handlePointerMove);
@@ -45,14 +42,15 @@ const FloatingAIButton = ({ username }) => {
   };
 
   const handlePointerMove = useCallback((e) => {
-    if (!isDragging) {
+    const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+    if (!isDraggingRef.current) {
         // If movement is significant, start dragging immediately
-        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
         const dx = Math.abs(clientX - dragStartRef.current.x);
         const dy = Math.abs(clientY - dragStartRef.current.y);
         if (dx > 5 || dy > 5) {
-            clearTimeout(dragStartRef.current.timer);
+            isDraggingRef.current = true;
             setIsDragging(true);
         } else {
             return;
@@ -62,9 +60,6 @@ const FloatingAIButton = ({ username }) => {
     if (e.type === 'touchmove') {
       e.preventDefault(); // Prevent scrolling while dragging
     }
-
-    const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
 
     const deltaX = clientX - dragStartRef.current.x;
     const deltaY = clientY - dragStartRef.current.y;
@@ -88,10 +83,9 @@ const FloatingAIButton = ({ username }) => {
   }, [isDragging]);
 
   const handlePointerUp = useCallback(() => {
-    clearTimeout(dragStartRef.current.timer);
-    
     // Slight delay to prevent click event right after drop
     setTimeout(() => {
+      isDraggingRef.current = false;
       setIsDragging(false);
     }, 50);
 
@@ -112,7 +106,7 @@ const FloatingAIButton = ({ username }) => {
         title="GitHub AI Assistant"
         aria-label="Toggle GitHub AI Assistant"
       >
-        <img src={chatbotIcon} alt="AI Assistant" className="floating-ai-image" />
+        <img src={chatbotIcon} alt="AI Assistant" className="floating-ai-image" draggable={false} />
       </button>
 
       {showChatbot && (

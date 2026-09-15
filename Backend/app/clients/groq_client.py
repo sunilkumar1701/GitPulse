@@ -12,7 +12,7 @@ import json
 import logging
 from typing import AsyncGenerator, Any
 
-from groq import AsyncGroq, RateLimitError, APIStatusError, APIConnectionError
+from groq import AsyncGroq, RateLimitError, APIStatusError, APIConnectionError, APITimeoutError
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,6 @@ async def chat_completion(
     }
     if tools:
         kwargs["tools"] = tools
-        kwargs["tool_choice"] = "auto"
 
     response = await client.chat.completions.create(**kwargs)
     return response
@@ -108,7 +107,6 @@ async def chat_completion_stream(
     }
     if tools:
         kwargs["tools"] = tools
-        kwargs["tool_choice"] = "auto"
 
     stream = await client.chat.completions.create(**kwargs)
     return stream
@@ -122,16 +120,14 @@ def handle_groq_error(error: Exception) -> str:
     if isinstance(error, RateLimitError):
         logger.warning("Groq rate limit hit.")
         return "The AI service is temporarily rate-limited. Please try again shortly."
+    if isinstance(error, APITimeoutError):
+        logger.warning("Groq API timeout: %s", str(error))
+        return "The AI service took too long to respond. Please try again."
     if isinstance(error, APIConnectionError):
         logger.error("Groq connection error: %s", str(error))
         return "Couldn't reach the AI service. Please check your connection and try again."
     if isinstance(error, APIStatusError):
         logger.error("Groq API status error %d: %s", error.status_code, error.message)
-        try:
-            with open(r"C:\Users\USER\.gemini\antigravity-ide\brain\5d414bae-6b33-431d-bb2c-2fd54eb56694\scratch\groq_error.txt", "a") as f:
-                f.write(f"Status Code: {error.status_code}\nMessage: {error.message}\n---\n")
-        except:
-            pass
         if error.status_code == 503:
             return "The AI service is temporarily unavailable. Please try again shortly."
         return "The AI service encountered an error. Please try again."

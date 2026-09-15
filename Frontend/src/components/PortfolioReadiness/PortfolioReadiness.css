@@ -20,7 +20,7 @@
 }
 
 .pr-title {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 
   color: var(--text-primary);
 
@@ -102,7 +102,7 @@
 
   flex-direction: column;
 
-  gap: 4px;
+  gap: 2px;
 }
 
 .pr-row {

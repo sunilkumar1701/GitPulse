@@ -16,13 +16,16 @@ pnpm-debug.log*
 
 # Testing
 /coverage
+/__tests__/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
 
 # Environment Variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Misc & Cache
 .DS_Store

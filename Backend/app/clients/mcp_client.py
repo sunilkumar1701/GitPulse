@@ -85,7 +85,13 @@ async def mcp_request(method: str, params: dict | None = None) -> dict:
     if params is not None:
         payload["params"] = params
 
-    response = await client.post("", json=payload)
-    response.raise_for_status()
-
-    return response.text
+    try:
+        response = await client.post("", json=payload)
+        response.raise_for_status()
+        return response.text
+    except httpx.TimeoutException:
+        logger.error("MCP request timed out for method %s", method)
+        raise RuntimeError("GitHub MCP connection timed out. Please try again.")
+    except httpx.HTTPStatusError as e:
+        logger.error("MCP HTTP error: %s", str(e))
+        raise RuntimeError(f"GitHub MCP connection error: {e.response.status_code}")

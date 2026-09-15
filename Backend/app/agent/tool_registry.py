@@ -20,7 +20,6 @@ _registry: dict[str, dict[str, Any]] = {}
 
 # Friendly UI labels for known tool name patterns
 _UI_LABEL_MAP: dict[str, str] = {
-    # Exact matches first, then prefix matches handled below
     "get_me": "Checking your GitHub profile",
     "get_user": "Looking up GitHub profile",
     "list_repos": "Fetching repositories",
@@ -33,6 +32,7 @@ _UI_LABEL_MAP: dict[str, str] = {
     "get_issue": "Reading issue details",
     "search_issues": "Searching GitHub issues",
     "list_pull_requests": "Checking pull requests",
+    "search_pull_requests": "Searching pull requests",
     "get_pull_request": "Reading pull request details",
     "list_commits": "Reviewing recent commits",
     "get_commit": "Checking commit details",
@@ -168,49 +168,80 @@ def get_groq_tool_definitions() -> list[dict[str, Any]]:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "tool_name": {
-                            "type": "string",
-                            "description": "The exact name of the capability to execute from the catalog."
-                        },
-                        "arguments": {
-                            "type": "object",
-                            "additionalProperties": True,
-                            "description": "The arguments required by the capability as specified in the catalog description (e.g. {'query': '...'} or {'owner': '...'})."
-                        },
-                        "reduction": {
-                            "type": "object",
-                            "description": "Structured QueryPlan representing your semantic intent for generic execution. Required for aggregations, sorting, and filtering.",
-                            "properties": {
-                                "capability": { "type": "string", "description": "The capability being exercised, e.g., REPOSITORIES, PULL_REQUESTS, PROFILE" },
-                                "operation": { "type": "string", "description": "e.g., count, sum, max, min, top_n, latest_n, sort, filter, select_fields, group_by, aggregate" },
-                                "metric": { "type": "string", "description": "e.g., stars, forks, language, stargazers_count" },
-                                "scope": { "type": "string", "description": "e.g., all_user_repositories, specific_repository, current_profile" },
-                                "limit": { "type": "integer", "description": "Limit N for top_n or latest_n" },
-                                "sort": { "type": "string", "description": "Sort direction or field, e.g., desc or updated_at" },
-                                "filters": {
-                                    "type": "object",
-                                    "description": "Key-value pairs to filter results",
-                                    "additionalProperties": True
-                                }
-                            }
-                        }
+                        "tool_name": { "type": "string", "description": "The capability to execute, e.g. list_repositories, search_issues" },
+                        "owner": { "type": "string" },
+                        "repo": { "type": "string" },
+                        "path": { "type": "string" },
+                        "query": { "type": "string" },
+                        "sort": { "type": "string" },
+                        "reduction_operation": { "type": "string", "description": "e.g., sum, top_n, latest_n, aggregate" },
+                        "reduction_metric": { "type": "string", "description": "e.g., stars, language, created_at" },
+                        "reduction_limit": { "type": "integer" },
+                        "reduction_sort": { "type": "string" },
+                        "reduction_group_by": { "type": "string" }
                     },
-                    "required": ["tool_name", "arguments"]
+                    "required": ["tool_name"]
                 },
             },
         }
     ]
 
 
-# Mapping of semantic capability to tool signature descriptions for the LLM
+# Mapping of semantic capability to tool signature descriptions for the LLM.
+# IMPORTANT: Only actual available (non-blocked) tools are listed here.
+# list_repositories is BLOCKED — the backend resolves it to search_repositories automatically.
 _CAPABILITY_DEFINITIONS = {
-    Capability.PROFILE: "- get_user(username: string)",
-    Capability.REPOSITORIES: "- search_repositories(query: string)\n- list_repositories(owner: string, sort: string)",
-    Capability.LANGUAGES: "- list_repositories(owner: string, sort: string) -> Use 'aggregate' operation to count languages",
-    Capability.README_CODE: "- get_file_contents(owner: string, repo: string, path: string)",
-    Capability.PULL_REQUESTS: "- search_issues(query: string) -> Use 'is:pr' in query",
-    Capability.ISSUES: "- search_issues(query: string) -> Use 'is:issue' in query",
-    Capability.ACTIVITY: "- list_commits(owner: string, repo: string)"
+    Capability.PROFILE: (
+        "- get_user(username: string)\n"
+        "  → Retrieves a GitHub user profile."
+    ),
+    Capability.REPOSITORIES: (
+        "- search_repositories(query: string)\n"
+        "  → To list all repositories for a user: query='user:<username>'\n"
+        "  → To search by topic: query='user:<username> topic:<topic>'\n"
+        "  → Supports sort param: sort:stars, sort:forks, sort:updated\n"
+        "  NOTE: Do NOT request list_repositories — the backend handles this automatically."
+    ),
+    Capability.LANGUAGES: (
+        "- search_repositories(query: string)\n"
+        "  → Returns primary language per repository (the 'language' field).\n"
+        "  → Use reduction_operation='aggregate' and reduction_metric='language' to count\n"
+        "    how many repositories use each primary language.\n"
+        "  CRITICAL LIMITATION: Language BYTE data and percentage breakdowns are NOT available\n"
+        "  via the connected MCP server. Do NOT fabricate byte counts or percentages.\n"
+        "  Do NOT substitute dashboard language percentages for this.\n"
+        "  If asked for byte-level language data, state this limitation clearly."
+    ),
+    Capability.README_CODE: (
+        "- get_file_contents(owner: string, repo: string, path: string)\n"
+        "  → path='README.md' for README retrieval.\n"
+        "  → Requires exact owner and repo. Resolve the repository first if only a name is given.\n"
+        "  → Content is base64-encoded; the backend decodes it automatically."
+    ),
+    Capability.PULL_REQUESTS: (
+        "- search_pull_requests(query: string)\n"
+        "  → PREFERRED tool for PR searches. Already scoped to is:pr by the MCP server.\n"
+        "  → For user's latest PR: query='author:<username> sort:created-desc'\n"
+        "  → For PRs in a specific repo: query='repo:<owner>/<repo> sort:created-desc'\n"
+        "  → Optional: owner, repo, sort, order, page, perPage params available.\n"
+        "  → The result's total_count is authoritative. Do not claim 'no PRs' unless total_count=0.\n"
+        "  → Alternatively: search_issues(query='is:pr author:<username>') also works but is less preferred."
+    ),
+    Capability.ISSUES: (
+        "- search_issues(query: string)\n"
+        "  → Use to search for GitHub Issues (NOT pull requests).\n"
+        "  → REQUIRED: include 'is:issue' in the query to exclude PRs from results.\n"
+        "  → For issues in a specific repo: query='is:issue repo:<owner>/<repo>'\n"
+        "  → For the authenticated user's issues: query='is:issue author:<username>'\n"
+        "  → Optional: owner, repo, sort, order, page, perPage params available.\n"
+        "  → Or use list_issues(owner, repo) for all issues in one repository.\n"
+        "  → The result's total_count is authoritative."
+    ),
+    Capability.ACTIVITY: (
+        "- list_commits(owner: string, repo: string, author: string [optional])\n"
+        "  → Lists commits for a specific repository.\n"
+        "  → Requires owner and repo. Resolve repository first if only a name is given."
+    ),
 }
 
 def get_compact_tool_catalog(active_capabilities: list[str]) -> str:
@@ -219,19 +250,14 @@ def get_compact_tool_catalog(active_capabilities: list[str]) -> str:
     """
     if not active_capabilities:
         return ""
-        
+
     lines = []
     for cap in active_capabilities:
         if cap in _CAPABILITY_DEFINITIONS:
             lines.append(_CAPABILITY_DEFINITIONS[cap])
-            
+
     header = "Available tool_names for github_mcp:\n"
-    instructions = (
-        "\nIMPORTANT: Use the 'reduction' object to specify semantic operations like 'sum', 'max', 'min', "
-        "'count', 'top_n', 'latest_n', 'filter', or 'sort' instead of retrieving all data and doing it manually. "
-        "The backend will enforce validity against a Capability Contract."
-    )
-    return header + "\n".join(lines) + instructions
+    return header + "\n\n".join(lines)
 
 
 def is_tool_allowed(name: str) -> bool:
