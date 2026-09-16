@@ -13,7 +13,13 @@
 
 # 🌐 Live Backend API
 
-https://github-talent-analyzer-api.onrender.com
+https://gitpulse-upls.onrender.com
+
+---
+
+# 🌐 Live Web App (Frontend)
+
+https://gitpulse-frontend-eh9j.onrender.com
 
 ---
 
@@ -565,7 +571,7 @@ Used for:
 
 ## Backend API
 
-https://github-talent-analyzer-api.onrender.com
+https://gitpulse-upls.onrender.com
 
 ---
 
