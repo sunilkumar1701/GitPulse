@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Check, X } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { supabase } from '../../services/supabaseClient';
@@ -12,6 +12,7 @@ const Signup = ({ onSwitchToLogin, onLoginSuccess }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmitting = useRef(false);
 
   const passwordReqs = {
     length: password.length >= 8,
@@ -54,7 +55,10 @@ const Signup = ({ onSwitchToLogin, onLoginSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+
     if (validate()) {
+      isSubmitting.current = true;
       setIsLoading(true);
       
       const authWebUrl = import.meta.env.VITE_AUTH_WEB_URL || 'http://localhost:5173';
@@ -69,6 +73,7 @@ const Signup = ({ onSwitchToLogin, onLoginSuccess }) => {
           emailRedirectTo: `${authWebUrl}/auth/verify`
         }
       });
+      isSubmitting.current = false;
       setIsLoading(false);
 
       if (error) {

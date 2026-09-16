@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Mail } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { supabase } from '../../services/supabaseClient';
@@ -9,6 +9,7 @@ const ForgotPassword = ({ onSwitchToLogin, defaultEmail = '' }) => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const isSubmitting = useRef(false);
 
   const validate = () => {
     const newErrors = {};
@@ -24,7 +25,10 @@ const ForgotPassword = ({ onSwitchToLogin, defaultEmail = '' }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+    
     if (validate()) {
+      isSubmitting.current = true;
       setIsLoading(true);
       
       const authWebUrl = import.meta.env.VITE_AUTH_WEB_URL || 'http://localhost:5173';
@@ -33,6 +37,7 @@ const ForgotPassword = ({ onSwitchToLogin, defaultEmail = '' }) => {
         redirectTo: `${authWebUrl}/auth/reset-password`,
       });
       
+      isSubmitting.current = false;
       setIsLoading(false);
 
       if (error) {
