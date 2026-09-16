@@ -8,7 +8,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check, RotateCcw, Bot } from "lucide-react";
 
-import AgentActivity from "./AgentActivity";
+import ThinkingReasoning from "./ThinkingReasoning";
 import SourceList from "./SourceList";
 
 export default function ChatAssistantMessage({
@@ -39,7 +39,7 @@ export default function ChatAssistantMessage({
       <div className="assistant-message-body">
         {/* Agent activity section */}
         {activities.length > 0 && (
-          <AgentActivity activities={activities} isActive={isStreaming && !content} />
+          <ThinkingReasoning activities={activities} isActive={isStreaming && !content} />
         )}
 
         {/* Message content */}

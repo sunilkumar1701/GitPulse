@@ -2,7 +2,8 @@
 
 # AI-Powered Developer Intelligence Platform
 
-Analyze GitHub profiles with interactive analytics, developer scoring, repository quality insights, activity trends, and AI-assisted GitHub exploration.
+- Analyze GitHub profiles with interactive analytics, developer scoring, repository quality insights, activity trends, and AI-assisted GitHub exploration.
+- GitPulse is an AI Agent built with an Agentic Workflow, featuring a custom semantic router, iterative tool-execution loops, and dynamic context management to autonomously query and analyze GitHub data."
 
 ### Built for Recruiters • Hiring Managers • Developers • Freelancers • Students
 
@@ -21,6 +22,15 @@ https://github-talent-analyzer-api.onrender.com
 GitPulse transforms any GitHub profile into a recruiter-friendly analytics dashboard.
 
 Instead of manually inspecting repositories, stars, activity, commits, and portfolio quality, the extension automatically evaluates developers and generates visual insights.
+
+### AI Assistant
+
+The assistant supports GitHub-oriented questions involving repositories,
+pull requests, issues, README files, languages, and activity.
+
+The agent uses capability-aware routing, deterministic execution for
+predictable queries, controlled MCP tool exposure, compact context, and
+evidence validation before producing an answer.
 
 The project combines:
 
@@ -427,6 +437,56 @@ Iterate through tools if needed and convert structured tool output into a stream
 
 ---
 
+### Token Optimization
+
+GitPulse is optimized for constrained LLM usage through:
+
+-   deterministic pre-LLM execution
+-   capability-specific routing
+-   limited conversation history
+-   compact previous tool results
+-   selective dashboard context
+-   reduced MCP tool schemas
+-   projected MCP responses
+-   minimal context for deterministic answers
+
+Agent telemetry records estimated and actual token usage, exposed tools,
+and executed tools for development diagnostics.
+
+---
+
+### Reliability
+
+The backend handles:
+
+-   Groq rate limits (`429`)
+-   Groq request timeouts
+-   GitHub MCP timeouts
+-   empty MCP results
+-   invalid repository searches
+-   unavailable file content
+-   authentication/session failures
+
+The extension should receive a clear user-facing message when an
+external service is temporarily unavailable.
+
+---
+
+### Security
+
+Provider credentials remain server-side.
+
+Never expose:
+
+-   Groq API keys
+-   GitHub personal access tokens
+-   Supabase service-role credentials
+
+Production logs should not contain secrets or unnecessary sensitive
+GitHub/user data.
+
+---
+
 # ⚠ Limitations
 
 Because responses depend on MCP tools and the Groq LLM:
@@ -462,6 +522,9 @@ Because responses depend on MCP tools and the Groq LLM:
 * httpx — async HTTP client for GitHub REST API and MCP
 * Pydantic — request/response validation
 * GitHub Remote MCP Server — tool execution via JSON-RPC
+* GitHub REST API
+* Supabase Authentication
+
 
 ---
 
@@ -506,9 +569,9 @@ https://github-talent-analyzer-api.onrender.com
 
 ---
 
-## Google Gemini AI Studio
+## Groq cloud API key
 
-https://aistudio.google.com/app/apikey
+https://console.groq.com/home
 
 ---
 
@@ -541,7 +604,7 @@ The extension only appears when visiting a **GitHub profile page** and opening t
 ## 1. Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/github-talent-analyzer.git
+git clone https://github.com/sunilkumar1701/GitPulse.git
 ```
 
 ---
