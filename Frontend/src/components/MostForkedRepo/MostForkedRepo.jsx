@@ -62,24 +62,24 @@ const MostForkedRepo = ({ username, onLoaded, refreshKey }) => {
     return () => {
       isMounted.current = false;
     };
-  }, [username, refreshKey, fetchRepository]);
-
-  if (loading) {
+  }, [username, refreshKey, fetchRepository]);  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="mfr-card">
+      <div className="mfr-card" style={{ position: 'relative' }}>
         <h3 className="mfr-title">Most Forked Repository</h3>
-
-        <div className="mfr-loading">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mfr-card">
-        <h3 className="mfr-title">Most Forked Repository</h3>
-
-        <div className="mfr-loading">{error}</div>
+        <div className="mfr-content" style={{ gap: '12px', display: 'flex', flexDirection: 'column', marginTop: '12px' }}>
+          <div className={`skeleton-text ${skeletonClass}`} style={{ width: '80%', margin: 0 }}></div>
+          <div className={`skeleton-text ${skeletonClass}`} style={{ width: '40%', margin: 0 }}></div>
+          <div className={`skeleton-text short ${skeletonClass}`} style={{ margin: 0 }}></div>
+        </div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

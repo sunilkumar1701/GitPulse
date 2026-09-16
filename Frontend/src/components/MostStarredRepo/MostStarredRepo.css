@@ -9,17 +9,12 @@
 
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
   border: 1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.08
-    );
+    var(--opacity-white-08);
 
   display: flex;
 
@@ -31,9 +26,9 @@
 }
 
 .msr-title {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 12px;
 
@@ -47,7 +42,7 @@
 
   flex-direction: column;
 
-  gap: 8px;
+  gap: 4px;
 
   flex: 1;
 }
@@ -59,7 +54,7 @@
 
   gap: 6px;
 
-  color: #60a5fa;
+  color: var(--info-light);
 
   text-decoration: none;
 
@@ -79,7 +74,7 @@
 }
 
 .msr-repo-name:hover {
-  color: #93c5fd;
+  color: var(--info-very-light);
 }
 
 .msr-repo-icon {
@@ -95,7 +90,7 @@
 
   gap: 5px;
 
-  color: #facc15;
+  color: var(--warning-yellow);
 
   font-size: 12px;
 
@@ -113,7 +108,7 @@
 
   gap: 6px;
 
-  color: #cbd5e1;
+  color: var(--text-light-muted);
 
   font-size: 11px;
 
@@ -127,7 +122,7 @@
 
   border-radius: 50%;
 
-  background: #3b82f6;
+  background: var(--info-main);
 
   flex-shrink: 0;
 }
@@ -141,7 +136,7 @@
 
   justify-content: center;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 12px;
 }

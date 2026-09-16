@@ -9,17 +9,12 @@
 
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
   border: 1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.08
-    );
+    var(--opacity-white-08);
 
   overflow: visible;
 }
@@ -27,7 +22,7 @@
 .rq-title {
   margin: 0 0 8px;
 
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 14px;
 
@@ -80,7 +75,7 @@
 }
 
 .rq-score {
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 12px;
 
@@ -90,7 +85,7 @@
 }
 
 .rq-label {
-  color: #22c55e;
+  color: var(--success-main);
 
   font-size: 9px;
 
@@ -136,7 +131,7 @@
 }
 
 .rq-metric-name {
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 12px;
 
@@ -152,7 +147,7 @@
 }
 
 .rq-metric-value {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 12px;
 
@@ -172,7 +167,7 @@
 
   justify-content: center;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 
@@ -194,17 +189,12 @@
 
   border-radius: 10px;
 
-  background: #0f172a;
+  background: var(--bg-dark-element);
 
   border: 1px solid
-    rgba(
-      139,
-      92,
-      246,
-      0.35
-    );
+    var(--opacity-primary-35);
 
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 11px;
 
@@ -212,12 +202,7 @@
 
   box-shadow:
     0 0 20px
-    rgba(
-      139,
-      92,
-      246,
-      0.25
-    );
+    var(--opacity-primary-25);
 
   opacity: 0;
 

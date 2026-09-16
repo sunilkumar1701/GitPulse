@@ -115,24 +115,20 @@ const ActivityAnalysis = ({ username, onLoaded, refreshKey }) => {
     );
 
     return Math.ceil(maxValue / 10) * 10;
-  }, [activityData]);
-
-  if (loading) {
+  }, [activityData]);  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="activity-card">
+      <div className="activity-card" style={{ position: 'relative' }}>
         <div className="activity-title">Activity (Last 12 Months)</div>
-
-        <div className="activity-loading">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="activity-card">
-        <div className="activity-title">Activity (Last 12 Months)</div>
-
-        <div className="activity-loading">{error}</div>
+        <div className={`skeleton-box ${skeletonClass}`} style={{ width: '100%', height: 'calc(100% - 30px)', marginTop: '10px' }}></div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

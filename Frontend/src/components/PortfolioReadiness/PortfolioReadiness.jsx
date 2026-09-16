@@ -102,42 +102,28 @@ const PortfolioReadiness = ({ username, onLoaded, refreshKey }) => {
     return "Poor";
   }, [score]);
 
-  if (loading) {
+  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="pr-card">
+      <div className="pr-card" style={{ position: 'relative' }}>
         <h3 className="pr-title">Portfolio Readiness</h3>
-
-        <div
-          style={{
-            height: "80px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#94a3b8",
-          }}
-        >
-          Loading...
+        <div className="pr-content">
+          <div className={`pr-chart-wrapper ${skeletonClass} skeleton-circle`} style={{ width: '80px', height: '80px', flexShrink: 0, border: 'none' }}></div>
+          <div className="pr-checks" style={{ width: '100%', gap: '12px', display: 'flex', flexDirection: 'column', paddingLeft: '16px' }}>
+            <div className={`${skeletonClass} skeleton-text`} style={{ width: '100%', margin: 0 }}></div>
+            <div className={`${skeletonClass} skeleton-text`} style={{ width: '80%', margin: 0 }}></div>
+            <div className={`${skeletonClass} skeleton-text`} style={{ width: '90%', margin: 0 }}></div>
+            <div className={`${skeletonClass} skeleton-text`} style={{ width: '70%', margin: 0 }}></div>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="pr-card">
-        <h3 className="pr-title">Portfolio Readiness</h3>
-
-        <div
-          style={{
-            height: "80px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ef4444",
-          }}
-        >
-          {error}
-        </div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

@@ -9,25 +9,20 @@
 
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
   border: 1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.08
-    );
+    var(--opacity-white-08);
 
   overflow: hidden;
 }
 
 .pr-title {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 14px;
 
@@ -79,7 +74,7 @@
 }
 
 .pr-score {
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 16px;
 
@@ -89,7 +84,7 @@
 }
 
 .pr-label {
-  color: #22c55e;
+  color: var(--success-main);
 
   font-size: 9px;
 
@@ -107,7 +102,7 @@
 
   flex-direction: column;
 
-  gap: 4px;
+  gap: 2px;
 }
 
 .pr-row {
@@ -145,17 +140,17 @@
 }
 
 .pr-dot.success {
-  background: #22c55e;
+  background: var(--success-main);
 }
 
 .pr-dot.failed {
-  background: #ef4444;
+  background: var(--danger-main);
 }
 
 /* ---------- Text ---------- */
 
 .pr-text {
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 12px;
 
@@ -191,29 +186,19 @@
 }
 
 .pr-status.success {
-  color: #22c55e;
+  color: var(--success-main);
 
-  border: 1px solid #22c55e;
+  border: 1px solid var(--success-main);
 
-  background: rgba(
-    34,
-    197,
-    94,
-    0.15
-  );
+  background: var(--opacity-success-15);
 }
 
 .pr-status.failed {
-  color: #ef4444;
+  color: var(--danger-main);
 
-  border: 1px solid #ef4444;
+  border: 1px solid var(--danger-main);
 
-  background: rgba(
-    239,
-    68,
-    68,
-    0.15
-  );
+  background: var(--opacity-danger-15);
 }
 
 /* ---------- Mobile ---------- */

@@ -1,16 +1,11 @@
 .technology-card {
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
-  border: 1px solid rgba(
-    59,
-    130,
-    246,
-    0.15
-  );
+  border: 1px solid var(--opacity-info-15);
 
   border-radius: 14px;
 
@@ -108,7 +103,7 @@
 
   margin-bottom: 10px;
 
-  color: #e2e8f0;
+  color: var(--text-extra-light);
 
   font-size: 15px;
 
@@ -167,7 +162,7 @@
   align-items: center;
   justify-content: center;
 
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 12px;
 }.tech-loading {
   width: 100%;
@@ -177,7 +172,7 @@
   align-items: center;
   justify-content: center;
 
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 12px;
 }
 /* ====================== */

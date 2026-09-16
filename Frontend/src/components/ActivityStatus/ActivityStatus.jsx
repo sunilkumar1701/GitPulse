@@ -109,22 +109,23 @@ const ActivityStatus = ({ username, onLoaded, refreshKey }) => {
     }
   };
 
-  if (loading) {
+  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="status-card">
+      <div className="status-card" style={{ position: 'relative' }}>
         <h3 className="status-title">Activity Status</h3>
-
-        <div className="status-loading">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="status-card">
-        <h3 className="status-title">Activity Status</h3>
-
-        <div className="status-loading">{error}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+          <div className={`${skeletonClass} skeleton-text`} style={{ width: '80%', margin: 0 }}></div>
+          <div className={`${skeletonClass} skeleton-text`} style={{ width: '60%', margin: 0 }}></div>
+        </div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

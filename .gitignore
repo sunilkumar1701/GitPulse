@@ -1,14 +1,39 @@
-# Backend
-Backend/node_modules/
-Backend/.env
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Frontend
-Frontend/node_modules/
-Frontend/dist/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
 
-# Common
+# Environments
 .env
-.env.local
+.env.*
+!.env.example
+
+# Testing
+coverage/
+.pytest_cache/
+htmlcov/
+.coverage
+tests/
+__tests__/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
+test_*.py
+*_test.py
+
+# Build / Output
+dist/
+build/
 
 # Logs
 *.log
@@ -17,5 +42,9 @@ Frontend/dist/
 .DS_Store
 Thumbs.db
 
-# VS Code
+# VS Code / IDE
 .vscode/
+.idea/
+
+# Custom Project Files
+Prompt md Files/

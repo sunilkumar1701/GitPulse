@@ -59,14 +59,24 @@ const RepositoryAnalysis = ({ username, onLoaded, refreshKey }) => {
 
   const { data: repositoryStats, loading, error } = state;
 
-  if (loading) {
+  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="repository-analysis">Loading repository analysis...</div>
+      <div className="repository-analysis" style={{ position: 'relative' }}>
+        <div className={`repo-analysis-card ${skeletonClass} skeleton-box`}></div>
+        <div className={`repo-analysis-card ${skeletonClass} skeleton-box`}></div>
+        <div className={`repo-analysis-card ${skeletonClass} skeleton-box`}></div>
+        <div className={`repo-analysis-card top-repo-card ${skeletonClass} skeleton-box`}></div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
+      </div>
     );
-  }
-
-  if (error) {
-    return <div className="repository-analysis">{error}</div>;
   }
 
   const topRepo = repositoryStats?.top_repo;

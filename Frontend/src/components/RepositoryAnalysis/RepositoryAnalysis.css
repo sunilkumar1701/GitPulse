@@ -19,16 +19,11 @@
 .repo-analysis-card {
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
-  border: 1px solid rgba(
-    59,
-    130,
-    246,
-    0.15
-  );
+  border: 1px solid var(--opacity-info-15);
 
   border-radius: 14px;
 
@@ -102,7 +97,7 @@
 
   text-decoration: none;
 
-  color: #cbd5e1;
+  color: var(--text-light-muted);
 
   margin-bottom: 8px;
 
@@ -114,7 +109,7 @@
 }
 
 .top-repo-link:hover {
-  color: #60a5fa;
+  color: var(--info-light);
 }
 
 
@@ -132,7 +127,7 @@
 
   gap: 4px;
 
-  color: #cbd5e1;
+  color: var(--text-light-muted);
 
   font-size: 12px;
 }
@@ -151,7 +146,7 @@
 
   cursor: pointer;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   flex-shrink: 0;
 }
@@ -170,27 +165,17 @@
 
   border-radius: 10px;
 
-  background: #0f172a;
+  background: var(--bg-dark-element);
 
-  border: 1px solid rgba(
-    139,
-    92,
-    246,
-    0.3
-  );
+  border: 1px solid var(--opacity-primary-30);
 
-  color: #e2e8f0;
+  color: var(--text-extra-light);
 
   font-size: 12px;
   line-height: 1.6;
 
   box-shadow:
-    0 0 20px rgba(
-      139,
-      92,
-      246,
-      0.25
-    );
+    0 0 20px var(--opacity-primary-25);
 
   opacity: 0;
   visibility: hidden;
@@ -216,7 +201,7 @@
   border-style: solid;
 
   border-color:
-    #0f172a
+    var(--bg-dark-element)
     transparent
     transparent
     transparent;

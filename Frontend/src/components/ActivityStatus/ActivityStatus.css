@@ -9,17 +9,12 @@
 
   background: linear-gradient(
     135deg,
-    #07152f,
-    #0b1730
+    var(--bg-skeleton-dark),
+    var(--bg-skeleton-light)
   );
 
   border: 1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.08
-    );
+    var(--opacity-white-08);
 
   display: flex;
 
@@ -31,9 +26,9 @@
 }
 
 .status-title {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 12px;
 
@@ -55,7 +50,7 @@
 
   border-radius: 50%;
 
-  border: 2px solid #16d957;
+  border: 2px solid var(--success-bright);
 
   display: flex;
 
@@ -67,11 +62,11 @@
 }
 
 .status-icon {
-  color: #16d957;
+  color: var(--success-bright);
 }
 
 .status-text {
-  color: #16d957;
+  color: var(--success-bright);
 
   font-size: 12px;
 
@@ -81,7 +76,7 @@
 }
 
 .status-last-active {
-  color: #cbd5e1;
+  color: var(--text-light-muted);
 
   font-size: 10px;
 
@@ -95,14 +90,9 @@
 .status-divider {
   height: 1px;
 
-  background: rgba(
-    255,
-    255,
-    255,
-    0.08
-  );
+  background: var(--opacity-white-08);
 
-  margin: 6px 0;
+  margin: 4px 0;
 }
 
 .status-streak {
@@ -114,7 +104,7 @@
 }
 
 .status-streak-label {
-  color: #ffffff;
+  color: var(--text-primary);
 
   font-size: 11px;
 
@@ -126,7 +116,7 @@
 }
 
 .status-streak-value {
-  color: #ff7b22;
+  color: var(--warning-bright-orange);
 
   font-size: 12px;
 
@@ -135,26 +125,26 @@
 
 /* Highly Active */
 .highly-active {
-  color: #16d957;
-  border-color: #16d957;
+  color: var(--success-bright);
+  border-color: var(--success-bright);
 }
 
 /* Moderate */
 .moderate-active {
-  color: #facc15;
-  border-color: #facc15;
+  color: var(--warning-yellow);
+  border-color: var(--warning-yellow);
 }
 
 /* Low */
 .low-active {
-  color: #f97316;
-  border-color: #f97316;
+  color: var(--warning-orange);
+  border-color: var(--warning-orange);
 }
 
 /* Inactive */
 .inactive {
-  color: #ef4444;
-  border-color: #ef4444;
+  color: var(--danger-main);
+  border-color: var(--danger-main);
 }
 
 .status-loading {
@@ -166,7 +156,7 @@
 
   height: 60px;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 12px;
 }

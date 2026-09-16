@@ -1,0 +1,56 @@
+.floating-ai-btn {
+  position: fixed;
+  z-index: 9999;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--border-default);
+  background: linear-gradient(
+    135deg,
+    var(--info-cyan),
+    var(--success-main)
+  );
+  color: white;
+  box-shadow: 0 4px 12px var(--opacity-success-35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  touch-action: none; /* Prevent browser handling of drag */
+}
+
+.floating-ai-btn.dragging {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px var(--opacity-success-60);
+  transition: none; /* Disable transition while dragging for snappiness */
+}
+
+.floating-ai-btn:not(.dragging):hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow:
+    0 0 20px var(--opacity-success-60),
+    0 0 35px var(--opacity-cyan-45);
+}
+
+.floating-ai-btn:not(.dragging):active {
+  transform: scale(0.96);
+}
+
+.floating-ai-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+@media (max-width: 400px) {
+  .floating-ai-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .floating-ai-image {
+    width: 28px;
+    height: 28px;
+  }
+}
