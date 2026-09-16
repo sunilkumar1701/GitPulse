@@ -9,6 +9,7 @@ import {
 const DashboardContext = createContext(null);
 
 const initialDashboardData = {
+  profileCard: null,
   profileAnalysis: null,
   repositoryAnalysis: null,
   technologyStack: null,

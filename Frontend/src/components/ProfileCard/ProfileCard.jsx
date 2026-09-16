@@ -35,6 +35,7 @@ const ProfileCard = ({ username, onLoaded, refreshKey }) => {
         });
 
         updateDashboardData("developerScore", scoreData);
+        updateDashboardData("profileCard", profileData);
 
         console.log("Developer Score:", scoreData);
 
@@ -84,12 +85,35 @@ const ProfileCard = ({ username, onLoaded, refreshKey }) => {
     }
   }, [profile?.blog]);
 
-  if (loading) {
-    return <div className="module-card profile-card">Loading Profile...</div>;
-  }
-
-  if (error) {
-    return <div className="module-card profile-card">{error}</div>;
+  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
+    return (
+      <div className="module-card profile-card" style={{ flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
+        <div className="profile-left">
+          <div className={`${skeletonClass} skeleton-circle`} style={{ width: '80px', height: '80px', flexShrink: 0 }}></div>
+          <div className="profile-details" style={{ width: '100%' }}>
+            <div className={`${skeletonClass} skeleton-title`} style={{ width: '60%', margin: '0 0 4px 0' }}></div>
+            <div className={`${skeletonClass} skeleton-text short`} style={{ margin: '0 0 12px 0' }}></div>
+            <div className="profile-meta">
+              <div className={`${skeletonClass} skeleton-text`} style={{ width: '40%' }}></div>
+              <div className={`${skeletonClass} skeleton-text`} style={{ width: '50%' }}></div>
+            </div>
+          </div>
+        </div>
+        <div className="profile-right" style={{ justifyContent: 'center' }}>
+          <div className={`${skeletonClass} skeleton-box`} style={{ width: '100px', height: '30px', marginBottom: '16px', borderRadius: '16px' }}></div>
+          <div className={`${skeletonClass} skeleton-circle`} style={{ width: '120px', height: '60px', borderRadius: '60px 60px 0 0' }}></div>
+        </div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

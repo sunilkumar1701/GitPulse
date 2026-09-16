@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "GitHub Talent Analyzer",
-  "version": "1.0.1",
+  "name": "GitPulse",
+  "version": "2.0.0",
 
   "permissions": [
     "sidePanel",
@@ -10,7 +10,7 @@
 
   "host_permissions": [
     "https://github.com/*",
-    "https://github-talent-analyzer-api.onrender.com/*"
+    "http://localhost:5000/*"
   ],
 
   "icons": {
@@ -25,7 +25,7 @@
   },
 
   "action": {
-  "default_title": "GitHub Talent Analyzer",
+  "default_title": "GitPulse",
   "default_icon": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -36,5 +36,17 @@
 
   "side_panel": {
     "default_path": "index.html"
-  }
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "index.html",
+        "assets/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

@@ -20,67 +20,76 @@ const fetchData = async (endpoint) => {
   }
 };
 
-export const getGithubUsername = () => {
+const GITHUB_SYSTEM_ROUTES = new Set([
+  'explore', 'topics', 'features', 'marketplace', 'settings',
+  'pulls', 'issues', 'notifications', 'new', 'organizations',
+  'repositories', 'search', 'sponsors', 'pricing', 'about',
+  'blog', 'contact', 'enterprise', 'nonprofit', 'dashboard',
+  'login', 'join', 'codespaces', 'trending'
+]);
+
+export const extractGithubContextFromUrl = (urlStr) => {
+  if (!urlStr) return { type: 'NON_GITHUB' };
+  
+  try {
+    const url = new URL(urlStr);
+    const hostname = url.hostname.toLowerCase();
+    
+    if (hostname !== 'github.com' && hostname !== 'www.github.com') {
+      return { type: 'NON_GITHUB' };
+    }
+    
+    const pathSegments = url.pathname.split('/').filter(Boolean);
+    
+    if (pathSegments.length === 0) {
+      return { type: 'GITHUB_SYSTEM' };
+    }
+    
+    const potentialUsername = pathSegments[0];
+    
+    if (GITHUB_SYSTEM_ROUTES.has(potentialUsername.toLowerCase())) {
+      return { type: 'GITHUB_SYSTEM' };
+    }
+    
+    return { 
+      type: 'GITHUB_USER', 
+      username: potentialUsername 
+    };
+  } catch (error) {
+    console.error("URL Parsing Error:", error);
+    return { type: 'NON_GITHUB' };
+  }
+};
+
+export const getCurrentTabContext = () => {
   return new Promise((resolve) => {
     try {
-      if (
-        typeof chrome === "undefined" ||
-        !chrome.tabs
-      ) {
-        resolve(null);
-
+      if (typeof chrome === "undefined" || !chrome.tabs) {
+        resolve({ type: 'NON_GITHUB' });
         return;
       }
 
-      chrome.tabs.query(
-        {
-          active: true,
-          currentWindow: true,
-        },
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (chrome.runtime.lastError) {
+          console.error("Chrome Runtime Error:", chrome.runtime.lastError.message);
+          resolve({ type: 'NON_GITHUB' });
+          return;
+        }
 
-        (tabs) => {
-          if (chrome.runtime.lastError) {
-            console.error(
-              "Chrome Runtime Error:",
-              chrome.runtime.lastError.message,
-            );
-
-            resolve(null);
-
-            return;
-          }
-
-          const url = tabs?.[0]?.url;
-
-          if (!url) {
-            resolve(null);
-
-            return;
-          }
-
-          /*
-            Matches:
-            https://github.com/sunilkumar1701
-            https://github.com/sunilkumar1701?tab=repositories
-            https://github.com/sunilkumar1701/
-          */
-
-          const match = url.match(
-            /^https:\/\/github\.com\/([^/?#]+)(?:\/)?(?:\?.*)?$/,
-          );
-
-          resolve(match?.[1] || null);
-        },
-      );
+        const url = tabs?.[0]?.url;
+        resolve(extractGithubContextFromUrl(url));
+      });
     } catch (error) {
-      console.error(
-        "Username Detection Error:",
-        error,
-      );
-
-      resolve(null);
+      console.error("Context Detection Error:", error);
+      resolve({ type: 'NON_GITHUB' });
     }
   });
+};
+
+// Deprecated
+export const getGithubUsername = async () => {
+  const context = await getCurrentTabContext();
+  return context.type === 'GITHUB_USER' ? context.username : null;
 };
 
 export const getProfile = (username) =>

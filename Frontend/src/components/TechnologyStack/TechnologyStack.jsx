@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { getTechnologyStackAnalysis } from "../../services/githubService";
 import { useDashboardContext } from "../../context/DashboardContext";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { COLORS } from '../../constants/colorConstant';
 
-const COLORS = ["#FACC15", "#3B82F6", "#FB923C", "#A855F7", "#22C55E"];
+const CHART_COLORS = [COLORS.warning.yellow, COLORS.info.main, COLORS.warning.lightOrange, COLORS.primary.light, COLORS.success.main];
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -13,11 +14,11 @@ const CustomTooltip = ({ active, payload }) => {
     return (
       <div
         style={{
-          background: "#0F172A",
+          background: COLORS.background.darkElement,
           border: "1px solid rgba(139,92,246,0.35)",
           borderRadius: "10px",
           padding: "10px 12px",
-          color: "#FFFFFF",
+          color: COLORS.text.primary,
           boxShadow: "0 0 20px rgba(139,92,246,0.25)",
           minWidth: "120px",
         }}
@@ -50,7 +51,9 @@ const CustomTooltip = ({ active, payload }) => {
 
         <div
           style={{
-            color: "#CBD5E1",
+            display: "flex",
+            justifyContent: "center",
+            color: COLORS.text.muted,
             fontSize: "12px",
           }}
         >
@@ -73,15 +76,19 @@ const TechnologyStack = ({ username, onLoaded, refreshKey }) => {
 
   const [totalLanguages, setTotalLanguages] = useState(0);
 
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     const fetchTechnologyStack = async () => {
       try {
         console.log("🔄 Refetching TechnologyStack");
         const data = await getTechnologyStackAnalysis(username);
 
-        const formattedData = data.top_languages.map((item, index) => ({
-          ...item,
-          color: COLORS[index % COLORS.length],
+        if (data && data.top_languages) {
+        // Map colors to data
+        const formattedData = data.top_languages.map((lang, index) => ({
+          ...lang,
+          color: CHART_COLORS[index % CHART_COLORS.length],
         }));
 
         setTechnologyData(formattedData);
@@ -93,8 +100,10 @@ const TechnologyStack = ({ username, onLoaded, refreshKey }) => {
         });
         console.log("✅ TechnologyStack Loaded");
         onLoaded?.();
-      } catch (error) {
-        console.error("Technology Stack Error:", error);
+        }
+      } catch (err) {
+        console.error("Technology Stack Error:", err);
+        setError("Failed to load technology data.");
       }
     };
 
@@ -114,7 +123,7 @@ const TechnologyStack = ({ username, onLoaded, refreshKey }) => {
   };
 
   return (
-    <div className="technology-card">
+    <div className="technology-card" style={{ position: 'relative' }}>
       <h3 className="technology-title" title="Top Languages">
         Top Languages
       </h3>
@@ -148,42 +157,57 @@ const TechnologyStack = ({ username, onLoaded, refreshKey }) => {
                   onMouseLeave={onPieLeave}
                 >
                   {technologyData.map((entry, index) => (
-                    <Cell
-                      key={entry.name}
-                      fill={entry.color}
-                      stroke="#fff"
-                      strokeWidth={activeIndex === index ? 2 : 1}
-                    />
-                  ))}
+                  <Cell
+                    key={entry.name}
+                    fill={entry.color}
+                    stroke={COLORS.text.primary}
+                    strokeWidth={activeIndex === index ? 2 : 1}
+                  />
+                ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="tech-loading">Loading...</div>
+            <div className={`skeleton-circle ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '100%', height: '100%', border: 'none' }}></div>
           )}
 
           <div className="chart-center">{totalLanguages}</div>
         </div>
 
         <div className="language-list">
-          {technologyData.map((language) => (
-            <div key={language.name} className="language-item">
-              <div className="language-left">
-                <span
-                  className="language-dot"
-                  style={{
-                    background: language.color,
-                  }}
-                />
-
-                <span>{language.name}</span>
+          {technologyData.length > 0 ? (
+            technologyData.map((language) => (
+              <div key={language.name} className="language-item">
+                <div className="language-left">
+                  <span
+                    className="language-dot"
+                    style={{
+                      background: language.color,
+                    }}
+                  />
+                  <span>{language.name}</span>
+                </div>
+                <span className="language-value">{language.value}%</span>
               </div>
-
-              <span className="language-value">{language.value}%</span>
+            ))
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+               <div className={`skeleton-text ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '100%', margin: 0 }}></div>
+               <div className={`skeleton-text ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '80%', margin: 0 }}></div>
+               <div className={`skeleton-text ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '90%', margin: 0 }}></div>
+               <div className={`skeleton-text ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '70%', margin: 0 }}></div>
+               <div className={`skeleton-text ${error ? "skeleton-error" : "skeleton"}`} style={{ width: '60%', margin: 0 }}></div>
             </div>
-          ))}
+          )}
         </div>
       </div>
+      {error && (
+        <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+          <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+            {error}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { useDashboardContext } from "../../context/DashboardContext";
 import { getRepositoryQualityAnalysis } from "../../services/githubService";
+import { COLORS } from '../../constants/colorConstant';
 
 const RepositoryQuality = ({ username, onLoaded, refreshKey }) => {
   const { updateDashboardData } = useDashboardContext();
@@ -121,7 +122,7 @@ const RepositoryQuality = ({ username, onLoaded, refreshKey }) => {
   }, [fetchRepositoryQuality, refreshKey]);
 
   const scoreColor = useMemo(() => {
-    if (!qualityData) return "#ef4444";
+    if (!qualityData) return COLORS.danger.main;
 
     if (qualityData.score >= 90) return "#22c55e";
 
@@ -129,7 +130,7 @@ const RepositoryQuality = ({ username, onLoaded, refreshKey }) => {
 
     if (qualityData.score >= 50) return "#f59e0b";
 
-    return "#ef4444";
+    return COLORS.danger.main;
   }, [qualityData]);
 
   const chartData = useMemo(() => {
@@ -145,44 +146,28 @@ const RepositoryQuality = ({ username, onLoaded, refreshKey }) => {
         value: 100 - qualityData.score,
       },
     ];
-  }, [qualityData]);
-
-  if (loading) {
+  }, [qualityData]);  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
     return (
-      <div className="rq-card">
+      <div className="rq-card" style={{ position: 'relative' }}>
         <h3 className="rq-title">Repository Quality</h3>
-
-        <div
-          style={{
-            height: "80px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#94a3b8",
-          }}
-        >
-          Loading...
+        <div className="rq-content">
+          <div className={`rq-chart-wrapper skeleton-circle ${skeletonClass}`} style={{ width: '80px', height: '80px', flexShrink: 0, border: 'none' }}></div>
+          <div className="rq-metrics" style={{ width: '100%', gap: '12px', display: 'flex', flexDirection: 'column', paddingLeft: '16px' }}>
+            <div className={`skeleton-text ${skeletonClass}`} style={{ width: '100%', margin: 0 }}></div>
+            <div className={`skeleton-text ${skeletonClass}`} style={{ width: '80%', margin: 0 }}></div>
+            <div className={`skeleton-text ${skeletonClass}`} style={{ width: '90%', margin: 0 }}></div>
+            <div className={`skeleton-text ${skeletonClass}`} style={{ width: '70%', margin: 0 }}></div>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rq-card">
-        <h3 className="rq-title">Repository Quality</h3>
-
-        <div
-          style={{
-            height: "80px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ef4444",
-          }}
-        >
-          {error}
-        </div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, top: '40px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

@@ -93,12 +93,23 @@ const ProfileAnalysis = ({ username, onLoaded, refreshKey }) => {
     return `${years} year${years > 1 ? "s" : ""} ago`;
   }, [recentRepo?.updated_at]);
 
-  if (loading) {
-    return <div className="profile-analysis">Loading profile analysis...</div>;
-  }
-
-  if (error) {
-    return <div className="profile-analysis">{error}</div>;
+  if (loading || error) {
+    const isError = !!error;
+    const skeletonClass = isError ? "skeleton-error" : "skeleton";
+    return (
+      <div className="profile-analysis" style={{ position: 'relative' }}>
+        <div className={`analysis-card ${skeletonClass} skeleton-box`}></div>
+        <div className={`analysis-card ${skeletonClass} skeleton-box`}></div>
+        <div className={`analysis-card repo-card ${skeletonClass} skeleton-box`}></div>
+        {isError && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 10 }}>
+            <span style={{ color: 'var(--danger-main)', fontWeight: 600, textAlign: 'center', background: 'var(--bg-card)', padding: '4px 12px', borderRadius: '8px' }}>
+              {error}
+            </span>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
