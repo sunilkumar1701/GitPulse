@@ -59,6 +59,13 @@
   min-width: 0;
 }
 
+  .analysis-count {
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 4px 0 0 0;
+  }
+
   .analysis-trend {
     color: var(--success-neon);
 

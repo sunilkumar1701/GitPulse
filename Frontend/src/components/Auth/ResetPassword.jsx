@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import './Auth.css';
@@ -11,6 +11,7 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('loading'); // 'loading', 'valid', 'success', 'error'
   const [errorMessage, setErrorMessage] = useState('');
+  const isSubmitting = useRef(false);
 
   const passwordReqs = {
     length: password.length >= 8,
@@ -84,11 +85,15 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+
     if (validate()) {
+      isSubmitting.current = true;
       setIsLoading(true);
       const { error } = await supabase.auth.updateUser({
         password: password
       });
+      isSubmitting.current = false;
       setIsLoading(false);
 
       if (error) {

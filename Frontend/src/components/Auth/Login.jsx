@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { supabase } from '../../services/supabaseClient';
@@ -10,6 +10,7 @@ const Login = ({ onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess, def
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmitting = useRef(false);
 
   const validate = () => {
     const newErrors = {};
@@ -29,12 +30,16 @@ const Login = ({ onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess, def
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting.current) return;
+
     if (validate()) {
+      isSubmitting.current = true;
       setIsLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
+      isSubmitting.current = false;
       setIsLoading(false);
 
       if (error) {
