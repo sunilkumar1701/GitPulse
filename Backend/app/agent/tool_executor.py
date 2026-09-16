@@ -351,15 +351,22 @@ def _project_result(data: Any, capability: str | None, operation: str | None, so
         elif operation in ("sum", "max", "min"):
             # Already scalar — pass through
             return data
-        # Default: keep only name, stars, forks, language (drop description, url, updatedAt, fork, default_branch)
         def _slim_repo(item):
             if isinstance(item, dict):
-                return {
+                res = {
                     "name": item.get("name"),
-                    "stars": item.get("stars") or item.get("stargazers_count"),
-                    "forks": item.get("forks") or item.get("forks_count"),
+                    "full_name": item.get("full_name") or item.get("name"),
                     "language": item.get("language"),
                 }
+                if sort_metric in ("stars", "stargazers_count"):
+                    res["stars"] = item.get("stars") or item.get("stargazers_count")
+                elif sort_metric in ("forks", "forks_count"):
+                    res["forks"] = item.get("forks") or item.get("forks_count")
+                elif sort_metric == "updated":
+                    res["updatedAt"] = item.get("updated_at") or item.get("updatedAt")
+                
+                res["url"] = item.get("html_url") or item.get("url")
+                return res
             return item
         if isinstance(data, dict) and "items" in data:
             return {"items": [_slim_repo(i) for i in data["items"]]}
@@ -585,7 +592,7 @@ def _build_evidence(
 ) -> dict:
     """Build a compact evidence state dict attached to tool results."""
     ev = {
-        "evidence_status": status,    # SUCCESS, NOT_FOUND, AMBIGUOUS, CAPABILITY_UNAVAILABLE, MCP_ERROR, PARTIAL
+        "evidence_status": status,    # SUCCESS, SUCCESS_EMPTY, NOT_FOUND, AMBIGUOUS, CAPABILITY_UNAVAILABLE, EVIDENCE_INSUFFICIENT, MCP_ERROR, PARTIAL
         "source": "mcp",
         "capability": capability or "UNKNOWN",
         "tool": tool,
@@ -914,14 +921,65 @@ async def execute_tool(tool_name: str, arguments: dict[str, Any], reduction: dic
             result_str = result_str[:MAX_RESULT_CHARS] + "... [result truncated]"
             projected = result_str
 
-        evidence = _build_evidence(
-            "SUCCESS", capability, tool_name,
-            result_count=result_count, complete=True,
-        )
+        # 8a. README evidence validation — do NOT mark SUCCESS unless actual content retrieved
+        if capability == "README_CODE" and tool_name == "get_file_contents":
+            _readme_content = ""
+            _readme_status = ""
+            if isinstance(projected, dict):
+                _readme_content = projected.get("content", "")
+                _readme_status = projected.get("status", "")
+            elif isinstance(projected, str):
+                _readme_content = projected
+
+            # Detect placeholder/metadata-only responses
+            _is_placeholder = False
+            if not _readme_content or len(_readme_content.strip()) < 20:
+                _is_placeholder = True
+            elif _readme_status in ("PARTIAL",) and not _readme_content.strip():
+                _is_placeholder = True
+            # Check for download-URL-only or metadata-only responses
+            elif _readme_content.strip().startswith("The MCP response contains a link"):
+                _is_placeholder = True
+            elif _readme_content.strip().startswith("README file exists but"):
+                _is_placeholder = True
+
+            if _is_placeholder:
+                logger.warning(
+                    "[README EVIDENCE] Content is empty/placeholder (len=%d). Marking CONTENT_UNAVAILABLE.",
+                    len(_readme_content) if _readme_content else 0
+                )
+                evidence = _build_evidence(
+                    "CONTENT_UNAVAILABLE", capability, tool_name,
+                    result_count=result_count, complete=False,
+                    error="README content not available or too small to be meaningful.",
+                )
+                projected = {
+                    "status": "CONTENT_UNAVAILABLE",
+                    "content_available": False,
+                    "reason": "The MCP server returned metadata or a placeholder instead of actual README text content.",
+                }
+                return {
+                    "success": False,
+                    "tool_name": tool_name,
+                    "result": projected,
+                    "error": "README content unavailable from MCP.",
+                    "evidence": evidence,
+                }
+            else:
+                # Genuine README content — mark SUCCESS
+                evidence = _build_evidence(
+                    "SUCCESS", capability, tool_name,
+                    result_count=result_count, complete=True,
+                )
+        else:
+            evidence = _build_evidence(
+                "SUCCESS_WITH_DATA" if result_count and result_count > 0 else "SUCCESS_EMPTY", capability, tool_name,
+                result_count=result_count, complete=True,
+            )
 
         logger.info(
-            "[MCP RESULT] tool=%s capability=%s result_count=%s evidence_status=SUCCESS",
-            tool_name, capability, result_count
+            "[MCP RESULT] tool=%s capability=%s result_count=%s evidence_status=%s",
+            tool_name, capability, result_count, evidence.get("evidence_status", "SUCCESS")
         )
 
         return {

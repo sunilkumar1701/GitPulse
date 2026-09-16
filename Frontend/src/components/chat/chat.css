@@ -399,19 +399,26 @@
 .md-table-wrapper {
   overflow-x: auto;
   margin: 6px 0;
+  max-width: 100%;
+  /* Optional smooth scrolling for mobile */
+  -webkit-overflow-scrolling: touch;
 }
 
 .md-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 12px;
 }
 
 .md-table th,
 .md-table td {
-  padding: 5px 10px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
   text-align: left;
+  min-width: 120px;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .md-table th {

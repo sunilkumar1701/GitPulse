@@ -29,6 +29,7 @@ export default function ChatPanel({ onClose, username }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [focusTrigger, setFocusTrigger] = useState(0);
 
   // Conversation history sent to backend for follow-up context
   const historyRef = useRef([]);
@@ -221,6 +222,7 @@ export default function ChatPanel({ onClose, username }) {
     setMessages([]);
     historyRef.current = [];
     setInput("");
+    setFocusTrigger((prev) => prev + 1);
   }, [handleStop]);
 
   const handleClearChat = handleNewChat;
@@ -262,6 +264,7 @@ export default function ChatPanel({ onClose, username }) {
         onStop={handleStop}
         isStreaming={isStreaming}
         disabled={false}
+        focusTrigger={focusTrigger}
       />
     </div>
   );

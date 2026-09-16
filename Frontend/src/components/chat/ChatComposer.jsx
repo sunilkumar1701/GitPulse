@@ -19,6 +19,7 @@ export default function ChatComposer({
   onStop,
   isStreaming,
   disabled = false,
+  focusTrigger = 0,
 }) {
   const textareaRef = useRef(null);
 
@@ -30,12 +31,12 @@ export default function ChatComposer({
     ta.style.height = `${Math.min(ta.scrollHeight, 140)}px`;
   }, [value]);
 
-  // Focus on mount
+  // Focus on mount or trigger
   useEffect(() => {
     if (!isStreaming && !disabled) {
       textareaRef.current?.focus();
     }
-  }, [isStreaming, disabled]);
+  }, [isStreaming, disabled, focusTrigger]);
 
   const handleKeyDown = useCallback(
     (e) => {

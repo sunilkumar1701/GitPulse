@@ -311,6 +311,21 @@ def validate_contract(capability: str, operation: str, metric: str, scope: str) 
     if metric == "forks":
         metric = "forks_count"
 
+    # Normalize metric aliases to canonical form before validation.
+    # This prevents router-produced aliases (e.g. "created") from failing
+    # contract validation while keeping the contract authoritative.
+    _METRIC_ALIASES: dict[str, str] = {
+        "created": "created_at",
+        "createdAt": "created_at",
+        "date created": "created_at",
+        "creation date": "created_at",
+        "updated": "updated_at",
+        "updatedAt": "updated_at",
+        "date updated": "updated_at",
+    }
+    if metric in _METRIC_ALIASES:
+        metric = _METRIC_ALIASES[metric]
+
     # Language bytes are UNAVAILABLE — reject immediately with an honest message
     if capability == "LANGUAGES" and metric in ("bytes", "percentage"):
         raise ValueError(

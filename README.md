@@ -1,4 +1,4 @@
-# 🚀 GitHub Talent Analyzer
+# 🚀 GitPulse
 
 # AI-Powered Developer Intelligence Platform
 
@@ -18,7 +18,7 @@ https://github-talent-analyzer-api.onrender.com
 
 # 📌 Overview
 
-GitHub Talent Analyzer transforms any GitHub profile into a recruiter-friendly analytics dashboard.
+GitPulse transforms any GitHub profile into a recruiter-friendly analytics dashboard.
 
 Instead of manually inspecting repositories, stars, activity, commits, and portfolio quality, the extension automatically evaluates developers and generates visual insights.
 
@@ -26,9 +26,9 @@ The project combines:
 
 * GitHub REST API
 * GitHub Remote MCP Server
-* Gemini 2.5 Flash
+* Groq Cloud (gpt-oss-120b)
 * React + Vite
-* Node.js + Express
+* Python 3.11+ + FastAPI
 
 ---
 
@@ -74,8 +74,8 @@ The project combines:
 # 🏗 High-Level Architecture
 
 ```text
-                    GitHub Talent Analyzer
-                           (Extension)
+                           GitPulse
+                          (Extension)
 
                   ┌──────────────────────┐
                   │                      │
@@ -87,7 +87,7 @@ The project combines:
                   ▼                      ▼
 
                 Backend API       Intelligent Router
-
+                 (FastAPI)
                   │                      │
                   ▼                      ▼
 
@@ -100,7 +100,7 @@ The project combines:
                                 Available Tool Cache
                                          │
                                          ▼
-                               Gemini Tool Selection
+                             Groq Agent (Iterative Loop)
                                          │
                                          ▼
                                   Tool Execution
@@ -109,7 +109,7 @@ The project combines:
                                  Structured Results
                                          │
                                          ▼
-                               Gemini Answer Formatter
+                             Groq Final Answer Stream
                                          │
                                          ▼
                                    Final Response
@@ -164,7 +164,7 @@ Determine Source
 GitHub MCP Route
       │
       ▼
-Gemini Tool Selection
+Groq Agent Loop
       │
       ▼
 Tool Validation
@@ -176,7 +176,7 @@ Remote GitHub MCP Server
 Structured Result
       │
       ▼
-Gemini Response Formatter
+Groq Stream Response
       │
       ▼
 Human Readable Answer
@@ -395,21 +395,21 @@ Ask GitHub-related questions using MCP tools.
 
 Model:
 
-Gemini 2.5 Flash (Free Tier)
+Groq Cloud (`openai/gpt-oss-120b`)
 
 Current Limit:
 
 ```text
-10 Chats / Day
+Configurable via API Keys
 ```
 
 ---
 
 ## Architecture
 
-The chatbot is NOT a general-purpose LLM assistant.
+The chatbot uses a true iterative agent loop powered by Groq.
 
-Gemini is only used for:
+Groq is used for:
 
 ### Tool Selection
 
@@ -423,13 +423,13 @@ Examples:
 
 ### Response Formatting
 
-Convert structured tool output into human-readable responses.
+Iterate through tools if needed and convert structured tool output into a streaming, human-readable final response.
 
 ---
 
 # ⚠ Limitations
 
-Because responses depend on MCP tools and Gemini:
+Because responses depend on MCP tools and the Groq LLM:
 
 * Answers may occasionally be inaccurate.
 * Hallucinations are possible.
@@ -457,15 +457,17 @@ Because responses depend on MCP tools and Gemini:
 
 ## Backend
 
-* Node.js
-* Express.js
-* Axios
+* Python 3.11+
+* FastAPI — async web framework
+* httpx — async HTTP client for GitHub REST API and MCP
+* Pydantic — request/response validation
+* GitHub Remote MCP Server — tool execution via JSON-RPC
 
 ---
 
 ## AI
 
-* Gemini 2.5 Flash
+* Groq Cloud (`openai/gpt-oss-120b`)
 
 ---
 
@@ -530,7 +532,7 @@ https://docs.github.com/en/rest
 
 # 🚀 Local Setup
 
-> **Important:** GitHub Talent Analyzer is a **browser extension**, not a traditional website. Running the frontend development server alone (`localhost:5173`) will not display the extension UI like a normal webpage.
+> **Important:** GitPulse is a **browser extension**, not a traditional website. Running the frontend development server alone (`localhost:5173`) will not display the extension UI like a normal webpage.
 
 The extension only appears when visiting a **GitHub profile page** and opening the browser side panel.
 
@@ -544,7 +546,7 @@ git clone https://github.com/YOUR_USERNAME/github-talent-analyzer.git
 
 ---
 
-# Backend Setup
+# Backend Setup (FastAPI)
 
 Move into the backend folder:
 
@@ -552,22 +554,117 @@ Move into the backend folder:
 cd Backend
 ```
 
-Install dependencies:
+### 1. Create Virtual Environment
 
 ```bash
-npm install
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
 ```
 
-Start the backend server:
+### 2. Install Dependencies
 
 ```bash
-npm run dev
+pip install -r requirements.txt
+```
+
+### 3. Configure Environment
+
+Copy `.env.example` to `.env` and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Server port (default: 5000) |
+| `GITHUB_API` | GitHub REST API base URL |
+| `GITHUB_TOKEN` | GitHub Personal Access Token |
+| `GITHUB_MCP_PAT` | GitHub PAT for MCP Server |
+| `GROQ_API_KEY` | Your Groq API Key |
+
+### 4. Run Development Server
+
+```bash
+uvicorn app.main:app --reload --port 5000
 ```
 
 Backend runs on:
 
 ```text
 http://localhost:5000
+```
+
+### 5. Run Tests
+
+```bash
+pytest tests/ -v
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `GET` | `/api/github/profile/{username}` | Basic profile info |
+| `GET` | `/api/github/analysis/{username}` | Profile analysis |
+| `GET` | `/api/github/repository-analysis/{username}` | Repository analysis |
+| `GET` | `/api/github/technology-stack/{username}` | Technology stack |
+| `GET` | `/api/github/activity-analysis/{username}` | Activity analysis |
+| `GET` | `/api/github/repository-quality/{username}` | Repository quality |
+| `GET` | `/api/github/portfolio-readiness/{username}` | Portfolio readiness |
+| `GET` | `/api/github/most-starred-repository/{username}` | Most starred repo |
+| `GET` | `/api/github/most-forked-repository/{username}` | Most forked repo |
+| `GET` | `/api/github/activity-status/{username}` | Activity status |
+| `GET` | `/api/github/developer-score/{username}` | Developer score |
+| `POST` | `/api/chat` | AI chat assistant |
+
+## API Documentation
+
+- **Swagger UI**: [http://localhost:5000/docs](http://localhost:5000/docs)
+- **ReDoc**: [http://localhost:5000/redoc](http://localhost:5000/redoc)
+
+## Backend Project Structure
+
+```
+Backend/
+├── app/
+│   ├── main.py              # FastAPI application entry point
+│   ├── core/
+│   │   └── config.py        # Pydantic Settings configuration
+│   ├── api/routes/           # HTTP route handlers
+│   ├── controllers/          # Request/response orchestration
+│   ├── services/             # Business logic
+│   ├── clients/              # External API clients (GitHub, MCP)
+│   ├── mcp/                  # MCP tool cache and test client
+│   ├── schemas/              # Pydantic request/response models
+│   ├── middleware/           # Error handling and logging
+│   └── utils/                # Helper utilities
+├── tests/                    # pytest test suite
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+## Backend Deployment (Render)
+
+Start command:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Build command:
+
+```bash
+pip install -r requirements.txt
 ```
 
 ---
@@ -654,20 +751,17 @@ Frontend/dist
 ```
 
 The extension will now be installed.
+
 ---
 
-# 🔐 Environment Variables
+# 🔐 Environment Variables (Frontend/Backend reference)
 
 ```env
 PORT=5000
-
 GITHUB_API=https://api.github.com
-
 GITHUB_TOKEN=YOUR_GITHUB_PAT
-
 GITHUB_MCP_PAT=YOUR_GITHUB_PAT
-
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GROQ_API_KEY=YOUR_GROQ_API_KEY
 ```
 
 ---
@@ -692,7 +786,7 @@ GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 
 ✅ Dashboard + MCP Hybrid AI
 
-✅ Production-ready Backend Structure
+✅ Production-ready Backend Structure (FastAPI)
 
 ---
 
@@ -732,7 +826,7 @@ Under Review
 
 ## Sunil Kumar P
 
-MERN Stack Developer
+MERN Stack & Python Developer
 
 Interested In:
 
@@ -748,4 +842,4 @@ If you found this project useful, please consider giving it a star ⭐
 
 ---
 
-Built with ❤️ using React, Node.js, GitHub REST API, GitHub Remote MCP Server and Gemini AI.
+Built with ❤️ using React, Python, FastAPI, GitHub REST API, GitHub Remote MCP Server and Groq AI.

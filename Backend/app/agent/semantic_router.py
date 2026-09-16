@@ -313,6 +313,22 @@ def determine_source_and_capabilities(
         # A domain-specific capability is present — PROFILE is never authoritative for these workflows
         required_caps.discard(Capability.PROFILE)
 
+    # 4c-ii. PR Capability Isolation — when PULL_REQUESTS is the primary intent,
+    # do not add REPOSITORIES unless the query requires a SEPARATE repository
+    # operation (listing, counting, ranking repos). Merely mentioning "repository"
+    # in the PR context ("which repository was it from?") does NOT require a
+    # separate REPOSITORIES tool call — the PR evidence already contains the repo name.
+    _SEPARATE_REPO_OPERATION_PATTERNS = [
+        r"\b(list\s+(my\s+)?(repo|project))",
+        r"\b(how\s+many\s+(public|private)?\s*(repo|repositor|project))\b",
+        r"\b(most\s+starred|most\s+popular|top\s+(repo|project|repositor))",
+        r"\b(sort(ed)?\s+by|order(ed)?\s+by|rank\s+by)\b",
+        r"\b(strongest|best|biggest|largest)\s+(repositor|repo|project)?\b",
+    ]
+    if Capability.PULL_REQUESTS in required_caps and Capability.REPOSITORIES in required_caps:
+        if not _match_any(q_lower, _SEPARATE_REPO_OPERATION_PATTERNS):
+            required_caps.discard(Capability.REPOSITORIES)
+
     # 4d. Clarification check — ambiguous ranking terms without an explicit metric
     # Only triggered for non-explicit-MCP queries where no metric is specified
     if not explicit_mcp and not is_dashboard_only:
@@ -339,10 +355,10 @@ def determine_source_and_capabilities(
         operation = "count"
     elif _match_any(q_lower, [r"\b(top|most\s+(starred|forked|active))\b"]) and metric:
         operation = "top_n"
-    elif _match_any(q_lower, [r"\b(latest|recent|last)\b"]):
+    elif _match_any(q_lower, [r"\b(latest|recently|recent|last)\b"]):
         operation = "latest_n"
         if not metric:
-            metric = "created"
+            metric = "created_at"
 
     # 5. Resolve source_mode
 
@@ -358,6 +374,28 @@ def determine_source_and_capabilities(
         if not required_caps:
             required_caps = {Capability.REPOSITORIES, Capability.PROFILE}
         return source_mode, sorted(required_caps), True, operation, metric
+
+    import difflib
+    words = q_lower.replace("?", "").replace(".", "").split()
+    
+    # Explicit score/rank or fuzzy misspellings (scre, sccor, scoore, etc.)
+    if any(kw in q_lower for kw in ["score", "rank", "readiness"]) or \
+       difflib.get_close_matches("score", words, n=5, cutoff=0.6) or \
+       difflib.get_close_matches("rank", words, n=5, cutoff=0.6):
+        source_mode = "dashboard"
+        required_caps.clear()
+        return source_mode, [], False, None, None
+
+    # General knowledge / conversational fallback (e.g. "how to improve...", "what is...")
+    if any(q_lower.startswith(prefix) for prefix in ["how to", "why", "best practices", "explain", "help"]):
+        source_mode = "dashboard"
+        required_caps.clear()
+        return source_mode, [], False, None, None
+        
+    if q_lower.startswith("what is") and not _match_any(q_lower, [r"\b(my|our|me|i)\b"]):
+        source_mode = "dashboard"
+        required_caps.clear()
+        return source_mode, [], False, None, None
 
     # Check if any detected capability mandates MCP
     mcp_required = bool(required_caps & _ALWAYS_MCP_CAPABILITIES)
@@ -389,10 +427,7 @@ def determine_source_and_capabilities(
         required_caps.clear()
         return source_mode, [], False, None, None
 
-    # Explicit score/rank
-    if "score" in q_lower or "rank" in q_lower or "readiness" in q_lower:
-        source_mode = "dashboard"
-        return source_mode, [], False, None, None
+
 
     # Default: use MCP to avoid hallucination
     source_mode = "mcp"

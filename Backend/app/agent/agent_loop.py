@@ -149,6 +149,50 @@ async def run_agent(
         summary=summary,
     )
 
+    # -------------------------------------------------------------------------
+    # Pre-tool short-circuit: language bytes/percentage queries are
+    # CAPABILITY_UNAVAILABLE.  Detect BEFORE computing tool definitions so
+    # the budget log correctly shows tools_exposed=0 and tools_called=0.
+    # -------------------------------------------------------------------------
+    if source_mode in ["mcp", "hybrid"] and "LANGUAGES" in capabilities:
+        import re as _re
+        q_lower = question.lower()
+        if _re.search(r'\b(byte|bytes|percentage|percent|%|byte[-\s]?weighted)\b', q_lower):
+            import uuid
+            request_id = str(uuid.uuid4())
+            # Minimal budget log with tools_exposed=0
+            sys_tokens = len(messages[0].get("content", "")) // 4 if messages else 0
+            dash_tokens = 0
+            hist_tokens = 0
+            logger.info(
+                "\n[CHAT BUDGET]\n"
+                "request_id=%s\n"
+                "step=%d\n"
+                "source_mode=%s\n"
+                "capabilities=%s\n"
+                "operation=%s\n"
+                "metric=%s\n"
+                "system_tokens=%d\n"
+                "dashboard_tokens=%d\n"
+                "history_tokens=%d\n"
+                "tool_schema_tokens=%d\n"
+                "estimated_input_tokens=%d\n"
+                "actual_input_tokens=0\n"
+                "tools_exposed=%d\n"
+                "tools_called=0\n",
+                request_id, 0, source_mode, capabilities, operation, metric,
+                sys_tokens, dash_tokens, hist_tokens, 0, sys_tokens, 0
+            )
+            logger.info(
+                "\n[CHAT ROUTE]\n"
+                "request_id=%s\n"
+                "source_mode=%s\n"
+                "capabilities=%s\n"
+                "operation=%s\n"
+                "metric=%s\n",
+                request_id, source_mode, capabilities, operation, metric
+            )
+
     # Tool definitions — computed early for budget logging, but may be cleared by short-circuit paths
     tools = get_groq_tool_definitions() if (has_tools() and source_mode in ["mcp", "hybrid"]) else []
 
@@ -216,31 +260,6 @@ async def run_agent(
         request_id, source_mode, capabilities, operation, metric
     )
 
-
-    # Pre-LLM short-circuit: language bytes/percentage queries are CAPABILITY_UNAVAILABLE
-    # Detect before spending any LLM tokens on a call that will fail at contract validation.
-    if source_mode in ["mcp", "hybrid"] and "LANGUAGES" in capabilities:
-        import re as _re
-        q_lower = question.lower()
-        if _re.search(r'\b(byte|bytes|percentage|percent|%|byte[-\s]?weighted)\b', q_lower):
-            lang_limitation = (
-                "I checked GitHub through MCP, but the connected MCP server provides only each repository's "
-                "primary language — not language byte counts or percentages. "
-                "I can show you which primary language appears most often across your repositories, "
-                "but I cannot determine the most-used language by bytes from the available data."
-            )
-            for i in range(0, len(lang_limitation), 4):
-                yield _sse({"type": "message_delta", "content": lang_limitation[i:i+4]})
-                await asyncio.sleep(0)
-            yield _sse({"type": "message_completed"})
-            logger.info(
-                "[LANG BYTES SHORT-CIRCUIT] request_id=%s capability=LANGUAGES status=CAPABILITY_UNAVAILABLE",
-                request_id
-            )
-            # Clear tools so budget shows tools_exposed=0
-            tools = []
-            return
-
     # Task 4: Deterministic Pre-LLM Execution (Count, Sum, Top-N, Latest-N)
     if source_mode in ["mcp", "hybrid"] and operation in ["count", "sum", "top_n", "latest_n"] and capabilities:
         # Select authoritative capability: skip PROFILE when a domain-specific cap is available
@@ -292,11 +311,9 @@ async def run_agent(
                 if operation == "count":
                     count = res_data.get("total_count", 0) if isinstance(res_data, dict) else len(res_data)
                     formatted_result = {"count": count, "count_source": "native_total" if isinstance(res_data, dict) and "total_count" in res_data else "local_fallback"}
-                    evidence_state["evidence_status"] = "SUCCESS"
                     
                 elif operation == "sum":
                     formatted_result = res_data
-                    evidence_state["evidence_status"] = "SUCCESS"
                     
                 elif operation == "top_n":
                     items = res_data.get("items", res_data) if isinstance(res_data, dict) else res_data
@@ -308,36 +325,46 @@ async def run_agent(
                                 if m_val is None and metric == "stars": m_val = item.get("stargazers_count")
                                 if m_val is None and metric == "forks": m_val = item.get("forks_count")
                                 formatted_result.append({"name": item.get("name") or item.get("full_name"), metric: m_val})
-                    evidence_state["evidence_status"] = "SUCCESS" if formatted_result else "NOT_FOUND"
                     
                 elif operation == "latest_n":
                     items = res_data.get("items", res_data) if isinstance(res_data, dict) else res_data
                     if isinstance(items, list) and len(items) > 0:
                         item = items[0]
-                        # Extract repository with fallback order:
-                        # 1. repository field  2. repository_url field  3. parse from html_url
-                        _repo = item.get("repository")
-                        if not _repo:
-                            _repo_url = item.get("repository_url") or ""
-                            if _repo_url:
-                                # repository_url is like https://api.github.com/repos/owner/repo
-                                _repo_url_parts = _repo_url.rstrip("/").split("/")
-                                if len(_repo_url_parts) >= 2:
-                                    _repo = "/".join(_repo_url_parts[-2:])
-                        if not _repo:
-                            _html = item.get("html_url") or item.get("url") or ""
-                            import re as _re_repo
-                            _m = _re_repo.search(r'github\.com/([^/]+/[^/]+)/', _html)
-                            _repo = _m.group(1) if _m else None
-                        formatted_result = {
-                            "number": item.get("number"),
-                            "title": item.get("title"),
-                            "repository": _repo,
-                            "createdAt": item.get("created_at") or item.get("createdAt"),
-                            "state": item.get("state"),
-                            "url": item.get("html_url") or item.get("url")
-                        }
-                    evidence_state["evidence_status"] = "SUCCESS" if formatted_result else "NOT_FOUND"
+                        if cap == "REPOSITORIES":
+                            _upd = item.get("updated_at") or item.get("updatedAt")
+                            formatted_result = {
+                                "name": item.get("name") or item.get("full_name"),
+                                "updatedAt": _upd or "unavailable",
+                                "url": item.get("html_url") or item.get("url")
+                            }
+                            if not _upd:
+                                evidence_state["evidence_status"] = "EVIDENCE_INSUFFICIENT"
+                                evidence_state["error"] = "The GitHub search returned a repository, but the available response did not include the update timestamp needed to verify which repository was most recently updated."
+                        else:
+                            # PULL_REQUESTS
+                            # Extract repository with fallback order:
+                            # 1. repository field  2. repository_url field  3. parse from html_url
+                            _repo = item.get("repository")
+                            if not _repo:
+                                _repo_url = item.get("repository_url") or ""
+                                if _repo_url:
+                                    # repository_url is like https://api.github.com/repos/owner/repo
+                                    _repo_url_parts = _repo_url.rstrip("/").split("/")
+                                    if len(_repo_url_parts) >= 2:
+                                        _repo = "/".join(_repo_url_parts[-2:])
+                            if not _repo:
+                                _html = item.get("html_url") or item.get("url") or ""
+                                import re as _re_repo
+                                _m = _re_repo.search(r'github\.com/([^/]+/[^/]+)/', _html)
+                                _repo = _m.group(1) if _m else None
+                            formatted_result = {
+                                "number": item.get("number"),
+                                "title": item.get("title"),
+                                "repository": _repo,
+                                "createdAt": item.get("created_at") or item.get("createdAt"),
+                                "state": item.get("state"),
+                                "url": item.get("html_url") or item.get("url")
+                            }
 
             pre_llm_result = {
                 "success": raw_result["success"],
@@ -361,6 +388,47 @@ async def run_agent(
                 "content": f"[System: Background MCP Execution completed automatically based on your request. Result:\n{tool_result_content}\nSummarize this for the user.]"
             })
             executed_tool_signatures.add(f"{tool_name}:{json.dumps(args, sort_keys=True)}:null")
+
+            if evidence_state.get("evidence_status") == "SUCCESS_EMPTY":
+                logger.info(
+                    "[EMPTY RESULT]\n"
+                    "capability=%s\n"
+                    "operation=%s\n"
+                    "result_count=0\n"
+                    "action=llm_contextual_empty_response",
+                    cap, operation
+                )
+            
+            # Clear tools to prevent the LLM from redundantly calling MCP again.
+            if pre_llm_result["success"] or evidence_state.get("evidence_status") in ("NOT_FOUND", "SUCCESS", "SUCCESS_WITH_DATA", "SUCCESS_EMPTY", "EVIDENCE_INSUFFICIENT"):
+                tools = []
+                
+                # Deterministic Query Context Reduction
+                from app.agent.prompt_builder import _CAPABILITY_PROMPTS
+                minimal_sys = (
+                    "You are a GitHub Developer Assistant. Provide the final answer based ONLY on the background MCP execution result."
+                )
+                if cap in _CAPABILITY_PROMPTS:
+                    minimal_sys += "\n" + _CAPABILITY_PROMPTS[cap]
+                minimal_sys += "\n\nCRITICAL: Do NOT call any tools. You are now in summary mode. Answer concisely."
+                
+                if evidence_state.get("evidence_status") == "SUCCESS_EMPTY":
+                    minimal_sys += "\n\n[Background MCP Execution Result: The requested search succeeded but returned 0 results. Inform the user that no matching items were found based on their specific query.]"
+                
+                # Extract original user question and up to 2 recent memory messages
+                user_question_msg = messages[-2] if len(messages) >= 2 else {"role": "user", "content": question}
+                memory_msgs = [m for m in messages[1:-2] if m.get("role") in ("user", "assistant") and not str(m.get("content")).startswith("[Dashboard data")]
+                recent_memory = memory_msgs[-2:] if len(memory_msgs) >= 2 else memory_msgs
+                
+                new_messages = [{"role": "system", "content": minimal_sys}]
+                new_messages.extend(recent_memory)
+                new_messages.append(user_question_msg)
+                new_messages.append({
+                    "role": "user",
+                    "content": f"[Background MCP Execution Result for capability={cap}, operation={operation}, metric={metric}]:\n{tool_result_content}\nSummarize this for the user."
+                })
+                
+                messages = new_messages
 
     try:
         while step < MAX_AGENT_STEPS:
@@ -466,7 +534,7 @@ async def run_agent(
                     if tool_results and evidence_states:
                         statuses = [e.get("evidence_status", "UNKNOWN") for e in evidence_states]
                         # If no capability succeeded or returned partial, prevent LLM from fabricating
-                        if all(s not in ["SUCCESS", "PARTIAL"] for s in statuses):
+                        if all(s not in ["SUCCESS", "SUCCESS_WITH_DATA", "SUCCESS_EMPTY", "PARTIAL"] for s in statuses):
                             logger.error(
                                 "[EVIDENCE BOUNDARY] All evidence failed (%s). Aborting LLM fabrication.", statuses
                             )
@@ -476,6 +544,11 @@ async def run_agent(
                             elif "AMBIGUOUS" in statuses:
                                 errors = [e.get("error") for e in evidence_states if e.get("evidence_status") == "AMBIGUOUS" and e.get("error")]
                                 msg = errors[0] if errors else "The requested repository is ambiguous."
+                            elif "CONTENT_UNAVAILABLE" in statuses:
+                                msg = "I found the repository, but the connected GitHub MCP server did not return the actual README content, so I can't safely display or summarize it."
+                            elif "EVIDENCE_INSUFFICIENT" in statuses:
+                                errors = [e.get("error") for e in evidence_states if e.get("evidence_status") == "EVIDENCE_INSUFFICIENT" and e.get("error")]
+                                msg = errors[0] if errors else "The retrieved evidence is insufficient to verify the requested metric."
                             else:
                                 msg = "I could not retrieve the required GitHub data to answer your question."
                             yield _sse({"type": "error", "message": msg})
